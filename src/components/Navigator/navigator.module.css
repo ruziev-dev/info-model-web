@@ -1,0 +1,25 @@
+.navigator {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.itemsContainer {
+  width: fit-content;
+  max-height: 80vh;
+  overflow-x: scroll;
+}
+
+.headerContainer {
+  height: 50px;
+  padding-left: 10px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.textContainer{
+	margin-left: 10px;
+	height: 20px;
+}
