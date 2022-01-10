@@ -1,31 +1,51 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { TMetaData } from "../types/graph";
-import { buildGraph } from "./graphThunks";
+import { TEdge, THorizon, TMetaData, TNode } from "../types/graph";
+import { buildHorizon, getHorizons } from "./graphThunks";
 
-const initialState = {
-  metaData: <TMetaData | null>null,
-  graphThree: <any | null>null,
-  loading: <false>true,
-  errorMessage: <string>"",
-};
+export interface TTube {
+  edge: TEdge;
+  startPoint?: TNode;
+  endPoint?: TNode;
+}
+export interface THorizonLabels {
+  label: string;
+  point: THREE.Vector3;
+}
+interface TGraphState {
+  metaData?: TMetaData;
+  three?: Array<TTube>;
+  horizons?: Array<THorizon>;
+  horixonLabels?: Array<THorizonLabels>;
+  errorMessage?: string;
+}
+
+const initialState: TGraphState = {};
 
 export const graphSlice = createSlice({
   name: "graph",
   initialState,
   reducers: {
     setMetaInfo: (state, action: PayloadAction<TMetaData>) => {
-      console.log("setMetaInfo", action);
       state.metaData = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(buildGraph.fulfilled, (state, action) => {
-        state.graphThree = action.payload;
-        state.loading = false;
+      .addCase(buildHorizon.fulfilled, (state, action) => {
+        //@ts-ignore
+        state.three = action.payload;
+
+        state.errorMessage = "";
       })
-      .addCase(buildGraph.rejected, (state, action) => {
-        state.loading = false;
+      .addCase(buildHorizon.rejected, (state, action) => {
+        state.errorMessage =
+          "Ошибка построения модели: " + action.error.message;
+      })
+      .addCase(getHorizons.fulfilled, (state, action) => {
+        state.horizons = action.payload;
+        state.errorMessage = "";
+      })
+      .addCase(getHorizons.rejected, (state, action) => {
         state.errorMessage =
           "Ошибка построения модели: " + action.error.message;
       });

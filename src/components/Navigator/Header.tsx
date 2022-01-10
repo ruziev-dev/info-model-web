@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { useIndexedDB } from "react-indexed-db";
 import { TreeNodeInfo, Tree, Button, IconName, Icon } from "@blueprintjs/core";
 import { useAppSelector } from "../../store/hooks";
 import { graph } from "../../indexedDB/DbConfig";

@@ -2,9 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom";
 import "./index.css";
 import App from "./App";
-import { initDB } from "react-indexed-db";
-import { DBConfig } from "./indexedDB/DbConfig";
-initDB(DBConfig);
+
 
 declare global {
   interface Window {

@@ -1,105 +1,102 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { graph } from "../indexedDB/DbConfig";
-import {
-  TEdge,
-  TEquipment,
-  TExcavation,
-  THorizon,
-  TNode,
-} from "../types/graph";
+
+import DB, { graph } from "../indexedDB/DbConfig";
+import { TEdge, THorizon, TNode } from "../types/graph";
+import { TTube } from "./graphReducer";
+import { RootState } from "./store";
 
 export const putDataToIndexedDB = createAsyncThunk(
   "app/putDataToIndexedDB",
-  () => {
-    //TODO: решить где хранить MetaInfo
-    localStorage.setItem(graph.DefaultSettings, window.DefaultSettings);
-    localStorage.setItem(graph.MetaInfo, window.MetaInfo);
-
-    let openRequest = indexedDB.open(graph.dbName, 1);
-
-    openRequest.onupgradeneeded = () => {
-      console.log("Сработала ф-ция openRequest.onupgradeneeded");
-
-      let db = openRequest.result;
-      db.createObjectStore(graph.tables.Edges, { keyPath: "Id" });
-      db.createObjectStore(graph.tables.Equipment, { keyPath: "Id" });
-      db.createObjectStore(graph.tables.Excavations, { keyPath: "Id" });
-      db.createObjectStore(graph.tables.Horizons, { keyPath: "Id" });
-      db.createObjectStore(graph.tables.Nodes, { keyPath: "Id" });
-      console.log("Таблицы были созданы");
-    };
-
-    openRequest.onerror = () => {
-      console.log("openRequest.onerror " + openRequest.error);
-    };
-
-    openRequest.onsuccess = () => {
-      console.log("openRequest.onsuccess");
-      let db = openRequest.result;
-
-      console.log("openRequest.onsuccess создали все таблицы");
-
-      let transaction = db.transaction(graph.tables.Edges, "readwrite");
-      let edges = transaction.objectStore(graph.tables.Edges);
-      try {
-        const edgesData: Array<TEdge> = JSON.parse(window.Edges);
-        edgesData.forEach((edge) => edges.add(edge));
-
-        console.log("положили Edges в indexedDb");
-      } catch (e) {
-        console.log("Edges", e);
-      }
-      try {
-        transaction = db.transaction(graph.tables.Equipment, "readwrite");
-        let equipment = transaction.objectStore(graph.tables.Equipment);
-        const equipmentData: Array<TEquipment> = JSON.parse(window.Equipment);
-        equipmentData.forEach((equip) => equipment.add(equip));
-        console.log("положили Equipment в indexedDb");
-      } catch (e) {
-        console.log("Equipment " + e);
-      }
-
-      try {
-        transaction = db.transaction(graph.tables.Excavations, "readwrite");
-        let excavations = transaction.objectStore(graph.tables.Excavations);
-        const excavationsData: Array<TExcavation> = JSON.parse(
-          window.Excavations
-        );
-        excavationsData.forEach((excavation) => excavations.add(excavation));
-        console.log("положили Excavations в indexedDb");
-      } catch (e) {
-        console.log("Excavations " + e);
-      }
-
-      try {
-        transaction = db.transaction(graph.tables.Horizons, "readwrite");
-        let horizons = transaction.objectStore(graph.tables.Horizons);
-        const horizonsData: Array<THorizon> = JSON.parse(window.Horizons);
-        horizonsData.forEach((horizon) => horizons.add(horizon));
-        console.log("положили Horizons в indexedDb");
-      } catch (e) {
-        console.log("Horizons " + e);
-      }
-
-      try {
-        transaction = db.transaction(graph.tables.Nodes, "readwrite");
-        let nodes = transaction.objectStore(graph.tables.Nodes);
-        const nodesData: Array<TNode> = JSON.parse(window.Nodes);
-        nodesData.forEach((node) => nodes.add(node));
-        console.log("положили Nodes в indexedDb");
-      } catch (e) {
-        console.log("Nodes " + e);
-      }
-    };
-  }
-);
-export const buildGraph = createAsyncThunk(
-  "app/buildGraph",
   async (args, thunkApi) => {
     try {
-      
+      /*  const oldVersionChangeDate = localStorage.getItem(
+        JSON.parse(graph.MetaInfo)?.lastChangeDate
+      );
+      const newVersionChangeDate = JSON.parse(window.MetaInfo)?.lastChangeDate;
+      if (oldVersionChangeDate === newVersionChangeDate) return; */
+
+      //TODO: решить где хранить DefaultSettings
+      localStorage.setItem(graph.DefaultSettings, window.DefaultSettings);
+      localStorage.setItem(graph.MetaInfo, window.MetaInfo);
+
+      const tables = Object.values(graph.indexedTables);
+
+      const globalPromises = tables.map(
+        async <EntityType>(tableName: string) => {
+          const entityTable = DB.useModel<EntityType>(tableName);
+          console.log(tableName);
+          //!!! работает в том случае если поля объекта Window в которые пишутся данные совпадают с названиями таблицы
+          //@ts-ignore TODO: переделать это говно
+          const payload: Array<EntityType> = JSON.parse(window[tableName]);
+          const promises = payload.map((payloadItem) =>
+            entityTable.insert(payloadItem).catch((error: Error) => {
+              //если ключ уже есть, то игнорируем ошибку об этом
+              if (error.message.includes("Key already exists")) return;
+              else throw error;
+            })
+          );
+          //await Promise.all(promises);
+          console.log(
+            `[app/putDataToIndexedDB]: Положили ${tableName} в indexedDb`
+          );
+
+          return Promise.all(promises);
+        }
+      );
+
+      await Promise.all(globalPromises);
+      console.log(
+        "[app/putDataToIndexedDB]: Все таблицы положены по своим местам"
+      );
+    } catch (e) {
+      console.error(e)
+      thunkApi.rejectWithValue(
+        "Ошибка при попытке положить данные в IndexedDB" + JSON.stringify(e)
+      );
+    }
+  }
+);
+export const buildHorizon = createAsyncThunk(
+  "graph/buildGraph",
+  async (horizon: THorizon, thunkApi) => {
+    try {
+      const edgesTable = DB.useModel<TEdge>(graph.indexedTables.Edges);
+      const nodesTable = DB.useModel<TNode>(graph.indexedTables.Nodes);
+
+      const edgesPromises = horizon.Edges.map((edge) =>
+        //@ts-ignore
+        edgesTable.selectByPk(JSON.parse(edge))
+      );
+      const allEdges = await Promise.all(edgesPromises);
+      const tubesPromises = allEdges.map(async (edge) => {
+        if (!edge) return;
+        const startPoint = await nodesTable.selectByPk(edge?.StartPoint);
+        const endPoint = await nodesTable.selectByPk(edge?.EndPoint);
+        const tubeData: TTube = {
+          edge,
+          startPoint,
+          endPoint,
+        };
+        return tubeData;
+      });
+
+      const graphThree = await Promise.all(tubesPromises);
+      return graphThree.filter(
+        (el) => el?.edge && el.endPoint && el.startPoint
+      );
     } catch (e) {
       thunkApi.rejectWithValue("Какая-то ошибка: " + e);
+    }
+  }
+);
+export const getHorizons = createAsyncThunk(
+  "graph/getHorizons",
+  async (args, thunkApi) => {
+    try {
+      const horizonTable = DB.useModel<THorizon>(graph.indexedTables.Horizons);
+      return await horizonTable.selectAll();
+    } catch (e) {
+      thunkApi.rejectWithValue("Какая-то ошибка: app/getHorizons -> " + e);
     }
   }
 );

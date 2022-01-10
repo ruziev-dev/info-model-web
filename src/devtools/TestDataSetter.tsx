@@ -7,14 +7,11 @@ import {
   graphMetaInfo,
   Horizons,
   Nodes,
+  Zones,
 } from "./testData";
 
 //эти объекты используются нативным приложение для отправки данных в WebView
-declare global {
-  interface Window {
-    log: (data: string) => void;
-  }
-}
+
 
 enum Theme {
   DARK = "dark",
@@ -27,6 +24,7 @@ export const TestDataInjector = () => {
     window.Excavations = Excavations;
     window.Horizons = Horizons;
     window.Nodes = Nodes;
+    window.Zones = Zones;
     //window.MetaInfo = MetaInfo;
   };
 

@@ -7,8 +7,8 @@ export const store = configureStore({
     app: appReducer,
     graph: graphReducer,
   },
-  middleware: (getDefaultMiddleware) => getDefaultMiddleware(),//.concat(logger),
-  devTools: process.env.NODE_ENV !== 'production',
+  middleware: (getDefaultMiddleware) => getDefaultMiddleware(), //.concat(logger),
+  devTools: process.env.NODE_ENV !== "production",
 });
 
 window.dispatch = store.dispatch;
@@ -23,7 +23,8 @@ declare global {
     Horizons: string;
     Nodes: string;
     DefaultSettings: string;
-	MetaInfo: string;
+    Zones: string;
+    MetaInfo: string;
   }
 }
 

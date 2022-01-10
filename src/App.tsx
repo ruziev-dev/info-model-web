@@ -7,10 +7,11 @@ import { useEffect } from "react";
 import { Loader } from "./components/Loading/Loading";
 import { putDataToIndexedDB } from "./store/graphThunks";
 import { DevTool } from "./devtools/DevTool";
+import { NonIdealState } from "@blueprintjs/core";
 
 function App() {
   const appInfo = useAppSelector((state) => state.app);
-  const { theme, isLoading, isRNControlLoading } = appInfo;
+  const { theme, isLoading, isRNControlLoading, errorMessage } = appInfo;
   document.documentElement.setAttribute("data-theme", theme);
   const dispatch = useAppDispatch();
   useEffect(() => {
@@ -21,7 +22,13 @@ function App() {
     : "Подготовка данных";
   return (
     <div className={`app-wrapper bp3-${theme}`}>
-      {isLoading ? (
+      {!!errorMessage ? (
+        <NonIdealState
+          icon="antenna"
+          title="Ошибка"
+          description={errorMessage}
+        />
+      ) : isLoading ? (
         <Loader status={status} />
       ) : (
         <>

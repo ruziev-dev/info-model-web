@@ -5,6 +5,7 @@
   "dependencies": {
     "@babel/core": "^7.16.0",
     "@blueprintjs/core": "^3.52.0",
+    "@n1md7/indexeddb-promise": "^6.0.0",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.3",
     "@react-three/drei": "^8.3.1",
     "@react-three/fiber": "^7.0.24",
@@ -45,7 +46,6 @@
     "react-css-modules": "^4.7.11",
     "react-dev-utils": "^12.0.0",
     "react-dom": "^17.0.2",
-    "react-indexed-db": "^1.0.12",
     "react-redux": "^7.2.6",
     "react-refresh": "^0.11.0",
     "react-three-fiber": "^6.0.13",

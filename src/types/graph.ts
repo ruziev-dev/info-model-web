@@ -1,5 +1,3 @@
-import { type } from "os";
-
 export type TAntenna = {
   //на самом деле тут стринги, хз почему. Надо разобраться в парсинге в нативной части
   Edge: number;

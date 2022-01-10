@@ -1,64 +1,48 @@
 import React, { useEffect, useState } from "react";
-import { useIndexedDB } from "react-indexed-db";
+//import { useIndexedDB } from "react-indexed-db";
 import { TreeNodeInfo, Tree, Button } from "@blueprintjs/core";
-import { useAppSelector } from "../../store/hooks";
+import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import { graph } from "../../indexedDB/DbConfig";
 import { THorizon } from "../../types/graph";
-import styles from './navigator.module.css'
+import styles from "./navigator.module.css";
 import { Header } from "./Header";
+import { buildHorizon, getHorizons } from "../../store/graphThunks";
 
 function Navigator() {
-  const { metaData } = useAppSelector((state) => state.graph);
-  const db = useIndexedDB(graph.tables.Horizons);
-  const [horisons, setHorizons] = useState<Array<TreeNodeInfo>>([]);
-  const [isLoading, setLoading] = useState<boolean>(true);
+  const dispatch = useAppDispatch();
   useEffect(() => {
-    db.getAll().then((res: Array<THorizon>) => {
-      const newItems = res.map((horizon) => ({
-        id: horizon.Id,
-        hasCaret: true,
-        label: horizon.Name,
-        childNodes: [
-          {
-            id: 123,
-            label: "Тест 1",
-          },
-          {
-            id: 1231,
-            label: "Тест 2",
-          },
-        ],
-      }));
-      setHorizons(newItems);
-      setLoading(false);
-    });
+    dispatch(getHorizons());
   }, []);
+  const { metaData, horizons } = useAppSelector((state) => state.graph);
 
   const onItemClick = (node: TreeNodeInfo) => {
-    const newHorizons = horisons.map((horizon) => ({
-      ...horizon,
-      isExpanded:
-        node.id === horizon.id ? !horizon.isExpanded : horizon.isExpanded,
-    }));
-    setHorizons(newHorizons);
+    console.log(node)
+    const choosedHorizon = horizons?.find((item) => item.Id === node.id);
+    console.log(choosedHorizon)
+
+    choosedHorizon && dispatch(buildHorizon(choosedHorizon));
   };
   return (
     <div className={styles.navigator}>
-
       <Header
         text={metaData?.name || "Загрузка... "}
-        loading={isLoading}
+        //loading={isLoading}
         icon="mountain"
       />
 
       <div className={styles.itemsContainer}>
         <Tree
-          contents={horisons}
+          contents={
+            horizons?.map((horizon) => ({
+              id: horizon.Id,
+              label: horizon.Name,
+            })) || []
+          }
           onNodeClick={onItemClick}
           onNodeExpand={onItemClick}
         />
-        </div>
       </div>
+    </div>
   );
 }
 export default Navigator;
